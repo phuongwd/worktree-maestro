@@ -1,20 +1,24 @@
-import { execSync } from 'child_process';
+import { spawnSync } from 'child_process';
 import type { ItermTabInfo } from '../types/index.js';
 
 function runAppleScript(script: string): string {
   try {
-    // Split multiline scripts into -e arguments for osascript
-    const lines = script
-      .split('\n')
-      .map((line) => line.trim())
-      .filter((line) => line.length > 0);
-
-    const args = lines.flatMap((line) => ['-e', line]);
-
-    return execSync(`osascript ${args.map((a) => `'${a.replace(/'/g, "'\"'\"'")}'`).join(' ')}`, {
+    // Use spawn with stdin to avoid shell escaping issues
+    const result = spawnSync('osascript', ['-'], {
+      input: script,
       encoding: 'utf-8',
       stdio: ['pipe', 'pipe', 'pipe'],
-    }).trim();
+    });
+
+    if (result.error) {
+      throw result.error;
+    }
+
+    if (result.status !== 0) {
+      throw new Error(result.stderr || 'AppleScript execution failed');
+    }
+
+    return result.stdout.trim();
   } catch (error) {
     const err = error as { stderr?: string; message: string };
     throw new Error(err.stderr || err.message);
@@ -43,14 +47,14 @@ export function openNewItermTab(path: string, tabName: string): string | null {
     tell application "iTerm2"
       activate
       tell current window
-        create tab with default profile
+        set newTab to (create tab with default profile)
         tell current session
           set name to "${tabName}"
-          write text "cd \\"${path}\\""
+          write text "cd '${path}'"
         end tell
-        return id of current tab
       end tell
     end tell
+    return "success"
   `;
 
   return runAppleScriptSafe(script);
@@ -63,7 +67,7 @@ export function openNewItermWindow(path: string, tabName: string): string | null
       set newWindow to (create window with default profile)
       tell current session of current window
         set name to "${tabName}"
-        write text "cd \\"${path}\\""
+        write text "cd '${path}'"
       end tell
       return id of current window
     end tell
