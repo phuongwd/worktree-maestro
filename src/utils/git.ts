@@ -38,6 +38,36 @@ export function getCurrentBranch(cwd?: string): string {
   return runGit('rev-parse --abbrev-ref HEAD', cwd);
 }
 
+export interface WorktreeMatch {
+  path: string;
+  branch: string;
+  name: string;
+  ticket: string | null;
+}
+
+export function findWorktreeByName(searchTerm: string): WorktreeMatch | null {
+  const worktrees = listWorktrees();
+
+  // Try exact match first
+  let match = worktrees.find((worktree) => worktree.name === searchTerm);
+  if (match) return match;
+
+  // Try partial match on name
+  const lowerSearch = searchTerm.toLowerCase();
+  match = worktrees.find((worktree) => worktree.name.toLowerCase().includes(lowerSearch));
+  if (match) return match;
+
+  // Try partial match on ticket
+  match = worktrees.find((worktree) => worktree.ticket?.toLowerCase().includes(lowerSearch));
+  if (match) return match;
+
+  // Try matching by branch name
+  match = worktrees.find((worktree) => worktree.branch.toLowerCase().includes(lowerSearch));
+  if (match) return match;
+
+  return null;
+}
+
 export function getDefaultBranch(cwd?: string): string {
   const remote = runGitSafe('remote', cwd);
   if (!remote) return 'main';

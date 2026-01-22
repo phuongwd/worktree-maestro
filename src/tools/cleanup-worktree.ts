@@ -1,14 +1,12 @@
 import { z } from 'zod';
-import { existsSync } from 'fs';
-import { join } from 'path';
 import {
-  listWorktrees,
+  findWorktreeByName,
   removeWorktree as gitRemoveWorktree,
   deleteBranch,
   getChangedFilesCount,
   getRepoRoot,
 } from '../utils/git.js';
-import { releasePort, loadConfig } from '../utils/config.js';
+import { releasePort } from '../utils/config.js';
 import { findTabByPath, closeItermTab } from '../utils/iterm.js';
 
 export const cleanupWorktreeSchema = z.object({
@@ -25,36 +23,6 @@ export interface CleanupWorktreeResult {
   message: string;
   warnings: string[];
   actions: string[];
-}
-
-function findWorktreeByName(name: string): { path: string; branch: string; name: string } | null {
-  const worktrees = listWorktrees();
-  const config = loadConfig();
-
-  // Try exact match first
-  let match = worktrees.find((wt) => wt.name === name);
-  if (match) return match;
-
-  // Try partial match on name
-  match = worktrees.find((wt) => wt.name.toLowerCase().includes(name.toLowerCase()));
-  if (match) return match;
-
-  // Try partial match on ticket
-  match = worktrees.find((wt) => wt.ticket?.toLowerCase().includes(name.toLowerCase()));
-  if (match) return match;
-
-  // Try matching by branch name
-  match = worktrees.find((wt) => wt.branch.toLowerCase().includes(name.toLowerCase()));
-  if (match) return match;
-
-  // Try path in base directory
-  const possiblePath = join(config.baseDirectory, name);
-  if (existsSync(possiblePath)) {
-    const pathMatch = worktrees.find((wt) => wt.path === possiblePath);
-    if (pathMatch) return pathMatch;
-  }
-
-  return null;
 }
 
 export async function cleanupWorktreeTool(input: CleanupWorktreeInput): Promise<CleanupWorktreeResult> {

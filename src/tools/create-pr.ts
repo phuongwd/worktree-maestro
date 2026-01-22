@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { execSync } from 'child_process';
 import {
-  listWorktrees,
+  findWorktreeByName,
   getChangedFilesCount,
   commitAll,
   push,
@@ -29,24 +29,6 @@ export const createPrSchema = z.object({
 });
 
 export type CreatePrInput = z.infer<typeof createPrSchema>;
-
-function findWorktreeByName(name: string): { path: string; branch: string; name: string; ticket: string | null } | null {
-  const worktrees = listWorktrees();
-
-  let match = worktrees.find((wt) => wt.name === name);
-  if (match) return match;
-
-  match = worktrees.find((wt) => wt.name.toLowerCase().includes(name.toLowerCase()));
-  if (match) return match;
-
-  match = worktrees.find((wt) => wt.ticket?.toLowerCase().includes(name.toLowerCase()));
-  if (match) return match;
-
-  match = worktrees.find((wt) => wt.branch.toLowerCase().includes(name.toLowerCase()));
-  if (match) return match;
-
-  return null;
-}
 
 function getAllChangedFiles(cwd: string): string[] {
   try {

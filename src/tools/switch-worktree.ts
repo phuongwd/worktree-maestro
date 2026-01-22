@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { existsSync } from 'fs';
-import { listWorktrees } from '../utils/git.js';
+import { findWorktreeByName } from '../utils/git.js';
 import {
   openNewItermTab,
   openSplitPane,
@@ -25,28 +25,6 @@ export interface SwitchWorktreeResult {
     branch: string;
   } | null;
   tabAction: 'switched' | 'opened' | 'failed';
-}
-
-function findWorktreeByName(name: string): { path: string; branch: string; name: string; ticket: string | null } | null {
-  const worktrees = listWorktrees();
-
-  // Try exact match first
-  let match = worktrees.find((wt) => wt.name === name);
-  if (match) return match;
-
-  // Try partial match on name
-  match = worktrees.find((wt) => wt.name.toLowerCase().includes(name.toLowerCase()));
-  if (match) return match;
-
-  // Try partial match on ticket
-  match = worktrees.find((wt) => wt.ticket?.toLowerCase().includes(name.toLowerCase()));
-  if (match) return match;
-
-  // Try matching by branch name
-  match = worktrees.find((wt) => wt.branch.toLowerCase().includes(name.toLowerCase()));
-  if (match) return match;
-
-  return null;
 }
 
 export async function switchWorktreeTool(input: SwitchWorktreeInput): Promise<SwitchWorktreeResult> {
