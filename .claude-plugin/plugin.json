@@ -1,0 +1,8 @@
+{
+  "name": "worktree-maestro",
+  "description": "Git worktree management with iTerm2 integration for parallel development. Quick commands: /wt, /wt-create, /wt-switch, /wt-clean, /wt-pr, /wt-config",
+  "author": {
+    "name": "Phuong",
+    "email": "phuongwd@gmail.com"
+  }
+}
