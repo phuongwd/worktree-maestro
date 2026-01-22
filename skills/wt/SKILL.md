@@ -2,6 +2,7 @@
 name: wt
 description: List all git worktrees with status. Use when asked to show, list, or view worktrees.
 argument-hint: "[repo-path]"
+allowed-tools: mcp__worktree-maestro__list_worktrees
 ---
 
 Use the `list_worktrees` MCP tool with `verbose: true` and `allRepos: true` to show all worktrees.

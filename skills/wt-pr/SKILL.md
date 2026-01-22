@@ -2,6 +2,7 @@
 name: wt-pr
 description: Create a GitHub PR from a worktree. Use when asked to create a PR, pull request, or submit changes from a worktree.
 argument-hint: "<name> [draft]"
+allowed-tools: mcp__worktree-maestro__create_pr
 ---
 
 Use the `create_pr` MCP tool to create a GitHub pull request.

@@ -2,6 +2,7 @@
 name: wt-config
 description: View or update worktree-maestro configuration. Use when asked to show, view, or change worktree settings.
 argument-hint: "[show | set <key> <value>]"
+allowed-tools: mcp__worktree-maestro__get_config, mcp__worktree-maestro__set_config
 ---
 
 Use the `get_config` or `set_config` MCP tools to manage configuration.

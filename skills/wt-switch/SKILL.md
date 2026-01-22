@@ -2,6 +2,7 @@
 name: wt-switch
 description: Switch to a worktree in iTerm. Use when asked to switch, open, or go to a worktree.
 argument-hint: "<name> [mode]"
+allowed-tools: mcp__worktree-maestro__switch_worktree
 ---
 
 Use the `switch_worktree` MCP tool to switch to a worktree.

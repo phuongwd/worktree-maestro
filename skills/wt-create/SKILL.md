@@ -2,6 +2,7 @@
 name: wt-create
 description: Create a new git worktree with iTerm integration. Use when asked to create, add, or start a new worktree.
 argument-hint: "[ticket] <name> [mode] [repo]"
+allowed-tools: mcp__worktree-maestro__create_worktree
 ---
 
 Use the `create_worktree` MCP tool to create a new worktree.

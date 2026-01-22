@@ -2,6 +2,7 @@
 name: wt-clean
 description: Remove a worktree and clean up resources. Use when asked to clean, remove, or delete a worktree.
 argument-hint: "<name> [force]"
+allowed-tools: mcp__worktree-maestro__cleanup_worktree
 ---
 
 Use the `cleanup_worktree` MCP tool to remove a worktree.
