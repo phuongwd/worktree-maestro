@@ -3,3 +3,4 @@ export { listWorktreesTool, listWorktreesSchema, type ListWorktreesInput } from 
 export { cleanupWorktreeTool, cleanupWorktreeSchema, type CleanupWorktreeInput } from './cleanup-worktree.js';
 export { switchWorktreeTool, switchWorktreeSchema, type SwitchWorktreeInput } from './switch-worktree.js';
 export { createPrTool, createPrSchema, type CreatePrInput } from './create-pr.js';
+export { getConfigTool, getConfigSchema, setConfigTool, setConfigSchema, type GetConfigInput, type SetConfigInput } from './config.js';

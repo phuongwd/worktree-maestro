@@ -18,6 +18,9 @@ import {
   switchWorktreeSchema,
   createPrTool,
   createPrSchema,
+  getConfigTool,
+  setConfigTool,
+  setConfigSchema,
 } from './tools/index.js';
 
 const server = new Server(
@@ -237,6 +240,71 @@ Requires: GitHub CLI (gh) installed and authenticated`,
           required: ['worktree'],
         },
       },
+      {
+        name: 'get_config',
+        description: `View current worktree-maestro configuration.
+
+Shows:
+- Base directory for worktrees
+- Port range for dev servers
+- Env files to copy
+- Post-create commands
+- Default base branch
+- Branch prefix`,
+        inputSchema: {
+          type: 'object',
+          properties: {},
+        },
+      },
+      {
+        name: 'set_config',
+        description: `Update worktree-maestro configuration.
+
+Configurable settings:
+- baseDirectory: Where worktrees are created
+- portRangeStart/End: Port range for dev servers
+- envFilesToCopy: List of env files to copy
+- postCreateCommands: Commands to run after creation
+- defaultBaseBranch: Default base branch (main/master)
+- branchPrefix: Prefix for new branches (feature/)
+
+Example: Set base directory to ~/projects/worktrees`,
+        inputSchema: {
+          type: 'object',
+          properties: {
+            baseDirectory: {
+              type: 'string',
+              description: 'Directory where worktrees are created',
+            },
+            portRangeStart: {
+              type: 'number',
+              description: 'Start of port range (1024-65535)',
+            },
+            portRangeEnd: {
+              type: 'number',
+              description: 'End of port range (1024-65535)',
+            },
+            envFilesToCopy: {
+              type: 'array',
+              items: { type: 'string' },
+              description: 'List of env files to copy',
+            },
+            postCreateCommands: {
+              type: 'array',
+              items: { type: 'string' },
+              description: 'Commands to run after creating worktree',
+            },
+            defaultBaseBranch: {
+              type: 'string',
+              description: 'Default base branch for new worktrees',
+            },
+            branchPrefix: {
+              type: 'string',
+              description: 'Prefix for new branch names',
+            },
+          },
+        },
+      },
     ],
   };
 });
@@ -302,6 +370,31 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       case 'create_pr': {
         const input = createPrSchema.parse(args);
         const result = await createPrTool(input);
+        return {
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify(result, null, 2),
+            },
+          ],
+        };
+      }
+
+      case 'get_config': {
+        const result = await getConfigTool();
+        return {
+          content: [
+            {
+              type: 'text',
+              text: result.formatted,
+            },
+          ],
+        };
+      }
+
+      case 'set_config': {
+        const input = setConfigSchema.parse(args);
+        const result = await setConfigTool(input);
         return {
           content: [
             {
