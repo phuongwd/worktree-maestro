@@ -3,7 +3,15 @@ import type { ItermTabInfo } from '../types/index.js';
 
 function runAppleScript(script: string): string {
   try {
-    return execSync(`osascript -e '${script.replace(/'/g, "'\"'\"'")}'`, {
+    // Split multiline scripts into -e arguments for osascript
+    const lines = script
+      .split('\n')
+      .map((line) => line.trim())
+      .filter((line) => line.length > 0);
+
+    const args = lines.flatMap((line) => ['-e', line]);
+
+    return execSync(`osascript ${args.map((a) => `'${a.replace(/'/g, "'\"'\"'")}'`).join(' ')}`, {
       encoding: 'utf-8',
       stdio: ['pipe', 'pipe', 'pipe'],
     }).trim();
