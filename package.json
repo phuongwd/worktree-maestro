@@ -1,5 +1,5 @@
 {
-  "name": "worktree-maestro",
+  "name": "@phuongwd/worktree-maestro",
   "version": "1.0.0",
   "description": "MCP server for git worktree management with iTerm2 integration",
   "type": "module",
@@ -7,21 +7,31 @@
   "bin": {
     "worktree-maestro": "./dist/index.js"
   },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/phuongwd/worktree-maestro.git"
+  },
   "scripts": {
     "build": "tsc",
     "dev": "tsc --watch",
     "start": "node dist/index.js",
     "lint": "eslint src --ext .ts",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "prepublishOnly": "pnpm run build"
   },
   "keywords": [
     "mcp",
     "git",
     "worktree",
     "iterm2",
-    "claude-code"
+    "claude-code",
+    "model-context-protocol"
   ],
-  "author": "Phuong",
+  "author": "Phuong <phuongwd@gmail.com>",
   "license": "MIT",
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.0.0",
