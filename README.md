@@ -16,14 +16,47 @@ MCP server for git worktree management with iTerm2 integration, designed for par
 
 ## Installation
 
+### As a Claude Code Plugin (Recommended)
+
 ```bash
 # Clone and build
 cd /path/to/worktree-maestro
-npm install
-npm run build
+pnpm install
+pnpm run build
 
+# Install as plugin
+claude plugin add /path/to/worktree-maestro
+```
+
+### As MCP Server Only
+
+```bash
 # Add to Claude Code
 claude mcp add worktree-maestro -- node /path/to/worktree-maestro/dist/index.js
+```
+
+## Slash Commands
+
+When installed as a plugin, you get quick slash commands:
+
+| Command | Description |
+|---------|-------------|
+| `/wt` | List all worktrees with status |
+| `/wt-create PROJ-123 name` | Create worktree (with optional iTerm mode: `split-v`, `split-h`) |
+| `/wt-switch name` | Switch to worktree by name/ticket |
+| `/wt-clean name` | Remove worktree and cleanup |
+| `/wt-pr name` | Create GitHub PR from worktree |
+| `/wt-config` | View or update configuration |
+
+### Examples
+
+```bash
+/wt                              # List all worktrees
+/wt-create PROJ-123 user-auth    # Create with ticket
+/wt-create auth-fix split-v      # Create with vertical split
+/wt-switch auth                  # Switch to matching worktree
+/wt-pr PROJ-123 draft            # Create draft PR
+/wt-config set branchPrefix feat/  # Update config
 ```
 
 ## Tools
