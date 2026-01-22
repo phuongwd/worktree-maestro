@@ -10,14 +10,15 @@ import {
 } from '../utils/git.js';
 import { loadConfig, getNextAvailablePort, assignPort } from '../utils/config.js';
 import { ensureDirectory, copyEnvFiles, installDependencies, runCommand } from '../utils/fs.js';
-import { openNewItermTab } from '../utils/iterm.js';
+import { openNewItermTab, openSplitPane } from '../utils/iterm.js';
 import type { CreateWorktreeResult } from '../types/index.js';
 
 export const createWorktreeSchema = z.object({
   ticket: z.string().optional().describe('Ticket/issue ID (e.g., PROJ-123, GH-456)'),
   name: z.string().describe('Short descriptive name for the worktree (e.g., user-auth, fix-login)'),
   baseBranch: z.string().optional().describe('Base branch to create from (defaults to main/master)'),
-  openInIterm: z.boolean().default(true).describe('Open worktree in new iTerm tab'),
+  openInIterm: z.boolean().default(true).describe('Open worktree in iTerm'),
+  itermMode: z.enum(['tab', 'split-horizontal', 'split-vertical']).default('tab').describe('How to open in iTerm: tab, split-horizontal, or split-vertical'),
   installDeps: z.boolean().default(true).describe('Run package manager install after creation'),
   copyEnv: z.boolean().default(true).describe('Copy .env files from main repo'),
   startServer: z.boolean().default(false).describe('Start dev server after creation'),
@@ -148,11 +149,20 @@ export async function createWorktreeTool(input: CreateWorktreeInput): Promise<Cr
     let itermTabId: string | null = null;
     if (input.openInIterm) {
       const tabName = input.ticket ? `${input.ticket}-${input.name}` : input.name;
-      itermTabId = openNewItermTab(worktreePath, tabName);
-      if (itermTabId) {
-        messages.push(`Opened iTerm tab: ${tabName}`);
+      const mode = input.itermMode || 'tab';
+
+      if (mode === 'tab') {
+        itermTabId = openNewItermTab(worktreePath, tabName);
       } else {
-        errors.push('Failed to open iTerm tab');
+        const direction = mode === 'split-vertical' ? 'vertical' : 'horizontal';
+        itermTabId = openSplitPane(worktreePath, tabName, direction);
+      }
+
+      if (itermTabId) {
+        const modeLabel = mode === 'tab' ? 'tab' : `split pane (${mode.replace('split-', '')})`;
+        messages.push(`Opened iTerm ${modeLabel}: ${tabName}`);
+      } else {
+        errors.push(`Failed to open iTerm ${mode}`);
       }
     }
 

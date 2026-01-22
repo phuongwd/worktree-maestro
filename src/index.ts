@@ -69,8 +69,14 @@ Example: Create worktree for ticket PROJ-123 called "user-auth"`,
             },
             openInIterm: {
               type: 'boolean',
-              description: 'Open in new iTerm tab (default: true)',
+              description: 'Open in iTerm (default: true)',
               default: true,
+            },
+            itermMode: {
+              type: 'string',
+              enum: ['tab', 'split-horizontal', 'split-vertical'],
+              description: 'How to open in iTerm: tab (default), split-horizontal, or split-vertical',
+              default: 'tab',
             },
             installDeps: {
               type: 'boolean',
@@ -130,7 +136,7 @@ Returns formatted table for easy viewing.`,
 
 Behavior:
 - If tab exists for worktree: switches to it
-- If no tab exists: opens new tab
+- If no tab exists: opens new tab or split pane
 - Supports partial matching on name/ticket/branch
 
 Example: Switch to PROJ-123 or "user-auth"`,
@@ -145,6 +151,12 @@ Example: Switch to PROJ-123 or "user-auth"`,
               type: 'boolean',
               description: 'Force open new tab even if one exists (default: false)',
               default: false,
+            },
+            mode: {
+              type: 'string',
+              enum: ['tab', 'split-horizontal', 'split-vertical'],
+              description: 'How to open: tab (default), split-horizontal, or split-vertical',
+              default: 'tab',
             },
           },
           required: ['name'],

@@ -42,6 +42,8 @@ export function isItermRunning(): boolean {
   return result === 'true';
 }
 
+export type SplitDirection = 'horizontal' | 'vertical';
+
 export function openNewItermTab(path: string, tabName: string): string | null {
   // Use printf to set terminal title that persists over shell
   const setTitleCmd = `printf '\\\\e]1;${tabName}\\\\a'`;
@@ -55,6 +57,27 @@ export function openNewItermTab(path: string, tabName: string): string | null {
           set name to "${tabName}"
           write text "cd '${path}' && ${setTitleCmd}"
         end tell
+      end tell
+    end tell
+    return "success"
+  `;
+
+  return runAppleScriptSafe(script);
+}
+
+export function openSplitPane(path: string, tabName: string, direction: SplitDirection): string | null {
+  const setTitleCmd = `printf '\\\\e]1;${tabName}\\\\a'`;
+  const splitCommand = direction === 'vertical' ? 'split vertically' : 'split horizontally';
+
+  const script = `
+    tell application "iTerm2"
+      activate
+      tell current session of current window
+        ${splitCommand} with default profile
+      end tell
+      tell current session of current window
+        set name to "${tabName}"
+        write text "cd '${path}' && ${setTitleCmd}"
       end tell
     end tell
     return "success"

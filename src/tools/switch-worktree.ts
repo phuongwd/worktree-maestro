@@ -3,13 +3,15 @@ import { existsSync } from 'fs';
 import { listWorktrees } from '../utils/git.js';
 import {
   openNewItermTab,
+  openSplitPane,
   switchToTab,
   findTabByPath,
 } from '../utils/iterm.js';
 
 export const switchWorktreeSchema = z.object({
   name: z.string().describe('Worktree name, ticket ID, or partial match'),
-  openNewTab: z.boolean().default(false).describe('Open in new tab instead of switching to existing'),
+  openNewTab: z.boolean().default(false).describe('Force open new tab even if one exists'),
+  mode: z.enum(['tab', 'split-horizontal', 'split-vertical']).default('tab').describe('How to open: tab, split-horizontal, or split-vertical'),
 });
 
 export type SwitchWorktreeInput = z.infer<typeof switchWorktreeSchema>;
@@ -102,14 +104,24 @@ export async function switchWorktreeTool(input: SwitchWorktreeInput): Promise<Sw
       }
     }
 
-    // Open new tab
+    // Open new tab or split pane
     const tabName = worktree.ticket ? `${worktree.ticket}-${worktree.name.replace(worktree.ticket + '-', '')}` : worktree.name;
-    const tabId = openNewItermTab(worktree.path, tabName);
+    const mode = input.mode || 'tab';
+
+    let tabId: string | null = null;
+    if (mode === 'tab') {
+      tabId = openNewItermTab(worktree.path, tabName);
+    } else {
+      const direction = mode === 'split-vertical' ? 'vertical' : 'horizontal';
+      tabId = openSplitPane(worktree.path, tabName, direction);
+    }
+
+    const modeLabel = mode === 'tab' ? 'tab' : `split pane (${mode.replace('split-', '')})`;
 
     if (tabId) {
       return {
         success: true,
-        message: `Opened new iTerm tab: ${tabName}`,
+        message: `Opened new iTerm ${modeLabel}: ${tabName}`,
         worktree: {
           name: worktree.name,
           path: worktree.path,
@@ -120,7 +132,7 @@ export async function switchWorktreeTool(input: SwitchWorktreeInput): Promise<Sw
     } else {
       return {
         success: false,
-        message: 'Failed to open new iTerm tab',
+        message: `Failed to open iTerm ${modeLabel}`,
         worktree: {
           name: worktree.name,
           path: worktree.path,

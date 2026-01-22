@@ -24,11 +24,14 @@ export interface WorktreeConfig {
   branchPrefix: string;
 }
 
+export type ItermOpenMode = 'tab' | 'split-horizontal' | 'split-vertical';
+
 export interface CreateWorktreeOptions {
   ticket?: string;
   name: string;
   baseBranch?: string;
   openInIterm?: boolean;
+  itermMode?: ItermOpenMode;
   installDeps?: boolean;
   copyEnv?: boolean;
   startServer?: boolean;
