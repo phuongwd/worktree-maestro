@@ -47,12 +47,12 @@ echo ""
 # Install dependencies
 echo -e "${YELLOW}Installing dependencies...${NC}"
 cd "$SCRIPT_DIR"
-$PKG_MANAGER install --silent
+$PKG_MANAGER install > /dev/null 2>&1
 echo -e "${GREEN}✓ Dependencies installed${NC}"
 
 # Build
 echo -e "${YELLOW}Building...${NC}"
-$PKG_MANAGER run build --silent
+$PKG_MANAGER run build > /dev/null 2>&1
 echo -e "${GREEN}✓ Build complete${NC}"
 echo ""
 
