@@ -73,9 +73,9 @@ export function openSplitPane(path: string, tabName: string, direction: SplitDir
     tell application "iTerm2"
       activate
       tell current session of current window
-        ${splitCommand} with default profile
+        set newSession to (${splitCommand} with default profile)
       end tell
-      tell current session of current window
+      tell newSession
         set name to "${tabName}"
         write text "cd '${path}' && ${setTitleCmd}"
       end tell
