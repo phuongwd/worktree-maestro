@@ -17,7 +17,27 @@ MCP server for git worktree management with iTerm2 integration, designed for par
 
 ## Installation
 
-### Step 1: Clone and Build
+### Quick Install (Recommended)
+
+```bash
+git clone https://github.com/phuongwd/worktree-maestro.git
+cd worktree-maestro
+./install.sh
+```
+
+The install script will:
+- Install dependencies and build
+- Add MCP server to Claude Code
+- Copy skills to `~/.claude/skills/`
+
+Then **restart Claude Code** to load the changes.
+
+### Manual Installation
+
+<details>
+<summary>Click to expand manual steps</summary>
+
+#### Step 1: Clone and Build
 
 ```bash
 git clone https://github.com/phuongwd/worktree-maestro.git
@@ -26,23 +46,28 @@ pnpm install
 pnpm run build
 ```
 
-### Step 2: Add MCP Server
+#### Step 2: Add MCP Server
 
 ```bash
-# Add MCP globally (available in all projects)
 claude mcp add --scope user worktree-maestro -- node /path/to/worktree-maestro/dist/index.js
 ```
 
-### Step 3: Install Skills (Slash Commands)
+#### Step 3: Install Skills
 
 ```bash
-# Copy skills to your personal skills folder
 cp -r /path/to/worktree-maestro/skills/* ~/.claude/skills/
 ```
 
-### Step 4: Restart Claude Code
+#### Step 4: Restart Claude Code
 
-Restart Claude Code to load the MCP and skills.
+</details>
+
+### Uninstall
+
+```bash
+cd worktree-maestro
+./uninstall.sh
+```
 
 ## Slash Commands
 
