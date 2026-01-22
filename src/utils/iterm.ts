@@ -43,6 +43,9 @@ export function isItermRunning(): boolean {
 }
 
 export function openNewItermTab(path: string, tabName: string): string | null {
+  // Use printf to set terminal title that persists over shell
+  const setTitleCmd = `printf '\\\\e]1;${tabName}\\\\a'`;
+
   const script = `
     tell application "iTerm2"
       activate
@@ -50,7 +53,7 @@ export function openNewItermTab(path: string, tabName: string): string | null {
         set newTab to (create tab with default profile)
         tell current session
           set name to "${tabName}"
-          write text "cd '${path}'"
+          write text "cd '${path}' && ${setTitleCmd}"
         end tell
       end tell
     end tell
