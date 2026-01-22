@@ -17,59 +17,45 @@ MCP server for git worktree management with iTerm2 integration, designed for par
 
 ## Installation
 
-### Quick Install via npm (Recommended)
+### Step 1: Clone and Build
 
 ```bash
-# Add MCP server globally
-claude mcp add --scope user worktree-maestro -- npx -y @phuongwd/worktree-maestro
-```
-
-That's it! The MCP is now available in all your projects.
-
-### As a Claude Code Plugin
-
-```bash
-# Clone and build
 git clone https://github.com/phuongwd/worktree-maestro.git
 cd worktree-maestro
 pnpm install
 pnpm run build
-
-# Install as plugin
-claude plugin add /path/to/worktree-maestro
 ```
 
-### Local MCP Installation
+### Step 2: Add MCP Server
 
 ```bash
-# Clone and build
-git clone https://github.com/phuongwd/worktree-maestro.git
-cd worktree-maestro
-pnpm install
-pnpm run build
-
-# Add to Claude Code
-claude mcp add worktree-maestro -- node /path/to/worktree-maestro/dist/index.js
+# Add MCP globally (available in all projects)
+claude mcp add --scope user worktree-maestro -- node /path/to/worktree-maestro/dist/index.js
 ```
 
-When installed globally, worktree-maestro:
-- Tracks all worktrees you create across different repositories
-- Lists worktrees from all tracked repos with `/wt`
-- Allows switching/cleaning worktrees from any directory
-- Shows repo name in the worktree list when multiple repos are tracked
+### Step 3: Install Skills (Slash Commands)
+
+```bash
+# Copy skills to your personal skills folder
+cp -r /path/to/worktree-maestro/skills/* ~/.claude/skills/
+```
+
+### Step 4: Restart Claude Code
+
+Restart Claude Code to load the MCP and skills.
 
 ## Slash Commands
-
-When installed as a plugin, you get quick slash commands:
 
 | Command | Description |
 |---------|-------------|
 | `/wt` | List all worktrees with status |
-| `/wt-create PROJ-123 name` | Create worktree (with optional iTerm mode: `split-v`, `split-h`) |
-| `/wt-switch name` | Switch to worktree by name/ticket |
-| `/wt-clean name` | Remove worktree and cleanup |
-| `/wt-pr name` | Create GitHub PR from worktree |
-| `/wt-config` | View or update configuration |
+| `/wt-create [ticket] <name> [mode]` | Create worktree with optional iTerm mode |
+| `/wt-switch <name> [mode]` | Switch to worktree by name/ticket |
+| `/wt-clean <name> [force]` | Remove worktree and cleanup |
+| `/wt-pr <name> [draft]` | Create GitHub PR from worktree |
+| `/wt-config [set key value]` | View or update configuration |
+
+**iTerm modes:** `tab` (default), `split-h`, `split-v`
 
 ### Examples
 
@@ -82,107 +68,50 @@ When installed as a plugin, you get quick slash commands:
 /wt-config set branchPrefix feat/  # Update config
 ```
 
-## Tools
+## MCP Tools
 
-### create_worktree
+You can also use natural language with Claude:
 
-Create a new worktree with full setup automation.
+| Tool | Example |
+|------|---------|
+| `create_worktree` | "Create worktree for PROJ-123 called user-auth" |
+| `list_worktrees` | "Show my worktrees" |
+| `switch_worktree` | "Switch to PROJ-123" |
+| `cleanup_worktree` | "Clean up the auth worktree" |
+| `create_pr` | "Create PR for PROJ-123" |
+| `get_config` | "Show worktree config" |
+| `set_config` | "Set branch prefix to feat/" |
 
-```
-"Create worktree for PROJ-123 called user-authentication"
-```
+## What Happens When You Create a Worktree
 
-**What happens:**
-1. Creates `~/worktrees/myrepo-PROJ-123-user-authentication/`
-2. Creates branch `feature/PROJ-123-user-authentication`
-3. Copies `.env`, `.env.local`, etc.
+1. Creates `~/worktrees/<repo>-<ticket>-<name>/`
+2. Creates branch `feature/<ticket>-<name>`
+3. Copies `.env`, `.env.local`, `.env.development`, etc.
 4. Runs `pnpm install` (or npm/yarn/bun)
-5. Opens new iTerm tab named `PROJ-123-user-authentication`
-6. Assigns port 3001 (or next available)
-
-### list_worktrees
-
-View all worktrees with status.
-
-```
-"Show my worktrees"
-```
-
-**Output:**
-```
-| Name                    | Branch           | Status | Changes |
-|-------------------------|------------------|--------|---------|
-| PROJ-123-user-auth      | feature/PROJ-... | dirty  | 3 files |
-| PROJ-456-payments       | feature/PROJ-... | clean  | -       |
-| hotfix-login            | hotfix/login-fix | clean  | -       |
-```
-
-### switch_worktree
-
-Switch to a worktree in iTerm.
-
-```
-"Switch to PROJ-123"
-```
-
-- Switches to existing tab if open
-- Opens new tab if not
-- Supports partial matching
-
-### cleanup_worktree
-
-Remove a worktree and clean up.
-
-```
-"Clean up PROJ-123 worktree"
-```
-
-**Actions:**
-- Closes iTerm tab
-- Releases port
-- Removes worktree directory
-- Deletes branch
-
-**Safety:** Warns if uncommitted changes exist.
-
-### create_pr
-
-Create a GitHub PR from a worktree.
-
-```
-"Create PR for PROJ-123"
-```
-
-**Workflow:**
-1. Commits any uncommitted changes
-2. Pushes branch to origin
-3. Creates PR with auto-generated title/body
-
-**Requires:** `gh` CLI installed and authenticated.
+5. Opens new iTerm tab (or split pane)
+6. Assigns unique port (3001-3099)
+7. Tracks worktree for global access
 
 ## Configuration
 
 Config file: `~/.worktree-maestro/config.json`
 
-```json
-{
-  "baseDirectory": "~/worktrees",
-  "portRangeStart": 3001,
-  "portRangeEnd": 3099,
-  "envFilesToCopy": [".env", ".env.local", ".env.development"],
-  "postCreateCommands": [],
-  "defaultBaseBranch": "main",
-  "branchPrefix": "feature/"
-}
-```
+| Setting | Default | Description |
+|---------|---------|-------------|
+| `baseDirectory` | `~/worktrees` | Where worktrees are created |
+| `portRangeStart` | `3001` | Start of port range |
+| `portRangeEnd` | `3099` | End of port range |
+| `defaultBaseBranch` | `main` | Default base branch |
+| `branchPrefix` | `feature/` | Prefix for new branches |
+| `envFilesToCopy` | `.env`, `.env.local`, etc. | Env files to copy |
 
 ## Directory Structure
 
 ```
 ~/worktrees/
-├── myapp-PROJ-123-user-auth/      # ticket + name
+├── myapp-PROJ-123-user-auth/
 ├── myapp-PROJ-456-payments/
-├── myapp-hotfix-login/            # no ticket
+├── myapp-hotfix-login/
 └── other-repo-ISSUE-42-feature/
 ```
 
@@ -198,8 +127,8 @@ Config file: `~/.worktree-maestro/config.json`
 ### Parallel Feature Development
 
 ```
-You: "Create worktree for PROJ-123 user authentication"
-You: "Create worktree for PROJ-456 payment integration"
+/wt-create PROJ-123 user-auth
+/wt-create PROJ-456 payments
 
 # Now working in 3 tabs: main + 2 features
 # Each has its own deps, env, and port
@@ -209,30 +138,29 @@ You: "Create worktree for PROJ-456 payment integration"
 
 ```
 # Deep in feature work, production breaks
-
-You: "Create worktree for hotfix login crash from main"
+/wt-create hotfix-login-crash
 # Fix the issue in new tab
-You: "Create PR for hotfix-login"
+/wt-pr hotfix-login-crash
 # Merged, back to feature work
-You: "Clean up hotfix-login worktree"
+/wt-clean hotfix-login-crash
 ```
 
-### A/B Implementation
+### Split Pane Workflow
 
 ```
-You: "Create worktree called approach-redux"
-You: "Create worktree called approach-zustand"
+# Open feature in vertical split (side by side)
+/wt-switch auth split-v
 
-# Implement both, compare, keep the winner
+# Open in horizontal split (top/bottom)
+/wt-create PROJ-789 api-refactor split-h
 ```
 
 ### Let Claude Work in Background
 
 ```
 # In your main worktree, you're coding
-
-You: "In the refactor-api worktree, refactor all API calls"
 # Claude works in separate worktree
+"In the refactor-api worktree, refactor all API calls"
 # Your files untouched
 ```
 
