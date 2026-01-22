@@ -8,6 +8,7 @@ import {
   hasRemote,
   getDefaultBranch,
 } from '../utils/git.js';
+import { getTrackedWorktreeByName } from '../utils/config.js';
 import {
   isGhInstalled,
   isGhAuthenticated,
@@ -62,8 +63,15 @@ export async function createPrTool(input: CreatePrInput): Promise<PrResult> {
       };
     }
 
-    // Find worktree
-    const worktree = findWorktreeByName(input.worktree);
+    // Find worktree - first try tracked worktrees (supports multi-repo)
+    const trackedWorktree = getTrackedWorktreeByName(input.worktree);
+    const gitWorktree = trackedWorktree ? null : findWorktreeByName(input.worktree);
+
+    const worktree = trackedWorktree
+      ? { path: trackedWorktree.path, branch: trackedWorktree.branch, ticket: trackedWorktree.ticket }
+      : gitWorktree
+        ? { path: gitWorktree.path, branch: gitWorktree.branch, ticket: gitWorktree.ticket }
+        : null;
 
     if (!worktree) {
       return {
