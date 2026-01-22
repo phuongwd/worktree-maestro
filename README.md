@@ -13,6 +13,7 @@ MCP server for git worktree management with iTerm2 integration, designed for par
 | Directory clutter | Clean structure in ~/worktrees/ |
 | Tab tracking overhead | iTerm2 integration with auto-naming |
 | PR workflow friction | One command: commit, push, create PR |
+| Managing worktrees across projects | Global tracking of all worktrees |
 
 ## Installation
 
@@ -34,6 +35,21 @@ claude plugin add /path/to/worktree-maestro
 # Add to Claude Code
 claude mcp add worktree-maestro -- node /path/to/worktree-maestro/dist/index.js
 ```
+
+### Global Installation (Recommended for Multi-Project)
+
+Install the MCP globally to manage worktrees across all your projects:
+
+```bash
+# Add to global Claude settings
+claude mcp add --global worktree-maestro -- node /path/to/worktree-maestro/dist/index.js
+```
+
+When installed globally, worktree-maestro:
+- Tracks all worktrees you create across different repositories
+- Lists worktrees from all tracked repos with `/wt`
+- Allows switching/cleaning worktrees from any directory
+- Shows repo name in the worktree list when multiple repos are tracked
 
 ## Slash Commands
 

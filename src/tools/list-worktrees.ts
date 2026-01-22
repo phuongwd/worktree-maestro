@@ -1,11 +1,15 @@
+import { existsSync } from 'fs';
 import { z } from 'zod';
-import { listWorktrees as gitListWorktrees } from '../utils/git.js';
+import { listWorktrees as gitListWorktrees, getRepoRoot, getRepoName } from '../utils/git.js';
 import { findTabByPath } from '../utils/iterm.js';
+import { getUniqueSourceRepos } from '../utils/config.js';
 import type { WorktreeInfo } from '../types/index.js';
 
 export const listWorktreesSchema = z.object({
   includeMain: z.boolean().default(true).describe('Include main working directory in list'),
   verbose: z.boolean().default(false).describe('Include additional details like port assignments'),
+  repo: z.string().optional().describe('Filter by source repository path. If not specified, shows worktrees from all tracked repos.'),
+  allRepos: z.boolean().default(true).describe('Show worktrees from all tracked repositories (global mode)'),
 });
 
 export type ListWorktreesInput = z.infer<typeof listWorktreesSchema>;
@@ -22,7 +26,7 @@ export interface ListWorktreesResult {
   formattedTable: string;
 }
 
-function formatWorktreeTable(worktrees: WorktreeInfo[], verbose: boolean): string {
+function formatWorktreeTable(worktrees: WorktreeInfo[], verbose: boolean, showRepo: boolean): string {
   if (worktrees.length === 0) {
     return 'No worktrees found.';
   }
@@ -30,9 +34,15 @@ function formatWorktreeTable(worktrees: WorktreeInfo[], verbose: boolean): strin
   const lines: string[] = [];
 
   // Header
-  if (verbose) {
+  if (verbose && showRepo) {
+    lines.push('| Repo | Name | Branch | Status | Changes | Port | iTerm |');
+    lines.push('|------|------|--------|--------|---------|------|-------|');
+  } else if (verbose) {
     lines.push('| Name | Branch | Status | Changes | Port | iTerm |');
     lines.push('|------|--------|--------|---------|------|-------|');
+  } else if (showRepo) {
+    lines.push('| Repo | Name | Branch | Status | Changes |');
+    lines.push('|------|------|--------|--------|---------|');
   } else {
     lines.push('| Name | Branch | Status | Changes |');
     lines.push('|------|--------|--------|---------|');
@@ -43,13 +53,18 @@ function formatWorktreeTable(worktrees: WorktreeInfo[], verbose: boolean): strin
     const changes = wt.changedFiles > 0 ? `${wt.changedFiles} files` : '-';
     const port = wt.port ? `${wt.port}` : '-';
     const iterm = wt.itermTab ? 'open' : '-';
+    const repo = wt.repoName ? wt.repoName.slice(0, 15) : '-';
 
     // Truncate branch name if too long
     const branch = wt.branch.length > 30 ? `${wt.branch.slice(0, 27)}...` : wt.branch;
     const name = wt.name.length > 25 ? `${wt.name.slice(0, 22)}...` : wt.name;
 
-    if (verbose) {
+    if (verbose && showRepo) {
+      lines.push(`| ${repo} | ${name} | ${branch} | ${status} | ${changes} | ${port} | ${iterm} |`);
+    } else if (verbose) {
       lines.push(`| ${name} | ${branch} | ${status} | ${changes} | ${port} | ${iterm} |`);
+    } else if (showRepo) {
+      lines.push(`| ${repo} | ${name} | ${branch} | ${status} | ${changes} |`);
     } else {
       lines.push(`| ${name} | ${branch} | ${status} | ${changes} |`);
     }
@@ -60,7 +75,68 @@ function formatWorktreeTable(worktrees: WorktreeInfo[], verbose: boolean): strin
 
 export async function listWorktreesTool(input: ListWorktreesInput): Promise<ListWorktreesResult> {
   try {
-    let worktrees = gitListWorktrees();
+    let worktrees: WorktreeInfo[] = [];
+    let showRepoColumn = false;
+
+    if (input.allRepos) {
+      // Global mode: get worktrees from all tracked repos
+      const sourceRepos = getUniqueSourceRepos();
+      showRepoColumn = sourceRepos.length > 1;
+
+      if (sourceRepos.length === 0) {
+        // Fallback to current directory if no tracked repos
+        try {
+          const currentRepo = getRepoRoot();
+          const repoName = getRepoName(currentRepo);
+          const repoWorktrees = gitListWorktrees(currentRepo);
+          for (const wt of repoWorktrees) {
+            wt.sourceRepo = currentRepo;
+            wt.repoName = repoName;
+          }
+          worktrees = repoWorktrees;
+        } catch {
+          // Not in a git repo, return empty
+        }
+      } else {
+        // Get worktrees from each tracked source repo
+        for (const repoPath of sourceRepos) {
+          if (!existsSync(repoPath)) continue;
+          try {
+            const repoName = getRepoName(repoPath);
+            const repoWorktrees = gitListWorktrees(repoPath);
+            for (const wt of repoWorktrees) {
+              wt.sourceRepo = repoPath;
+              wt.repoName = repoName;
+            }
+            worktrees.push(...repoWorktrees);
+          } catch {
+            // Skip repos that can't be accessed
+          }
+        }
+      }
+    } else if (input.repo) {
+      // Filter by specific repo
+      const repoPath = getRepoRoot(input.repo);
+      const repoName = getRepoName(repoPath);
+      worktrees = gitListWorktrees(repoPath);
+      for (const wt of worktrees) {
+        wt.sourceRepo = repoPath;
+        wt.repoName = repoName;
+      }
+    } else {
+      // Current repo only
+      try {
+        const repoPath = getRepoRoot();
+        const repoName = getRepoName(repoPath);
+        worktrees = gitListWorktrees(repoPath);
+        for (const wt of worktrees) {
+          wt.sourceRepo = repoPath;
+          wt.repoName = repoName;
+        }
+      } catch {
+        // Not in a git repo
+      }
+    }
 
     // Enrich with iTerm tab info
     for (const wt of worktrees) {
@@ -85,7 +161,7 @@ export async function listWorktreesTool(input: ListWorktreesInput): Promise<List
       withOpenTabs: worktrees.filter((wt) => wt.itermTab).length,
     };
 
-    const formattedTable = formatWorktreeTable(worktrees, input.verbose);
+    const formattedTable = formatWorktreeTable(worktrees, input.verbose, showRepoColumn);
 
     return {
       success: true,

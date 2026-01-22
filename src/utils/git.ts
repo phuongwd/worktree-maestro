@@ -158,6 +158,8 @@ export function listWorktrees(cwd?: string): WorktreeInfo[] {
       port,
       itermTab: null, // Will be populated by iTerm integration
       createdAt,
+      sourceRepo: null, // Will be populated by caller
+      repoName: null, // Will be populated by caller
     });
   }
 
@@ -168,12 +170,13 @@ export function createWorktree(
   targetPath: string,
   branch: string,
   baseBranch: string,
-  createNewBranch: boolean
+  createNewBranch: boolean,
+  cwd?: string
 ): void {
   if (createNewBranch) {
-    runGit(`worktree add -b ${branch} "${targetPath}" ${baseBranch}`);
+    runGit(`worktree add -b ${branch} "${targetPath}" ${baseBranch}`, cwd);
   } else {
-    runGit(`worktree add "${targetPath}" ${branch}`);
+    runGit(`worktree add "${targetPath}" ${branch}`, cwd);
   }
 }
 

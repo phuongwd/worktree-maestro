@@ -12,6 +12,18 @@ export interface WorktreeInfo {
   port: number | null;
   itermTab: string | null;
   createdAt: Date;
+  sourceRepo: string | null; // Path to the source repository
+  repoName: string | null; // Name of the source repository
+}
+
+export interface TrackedWorktree {
+  name: string;
+  path: string;
+  sourceRepo: string;
+  repoName: string;
+  branch: string;
+  ticket: string | null;
+  createdAt: string; // ISO date string for serialization
 }
 
 export interface WorktreeConfig {

@@ -11,6 +11,9 @@ arguments:
     description: "iTerm mode: tab, split-h, split-v"
     required: false
     default: tab
+  - name: repo
+    description: Path to source repository (for global use)
+    required: false
 ---
 
 Use the `create_worktree` MCP tool to create a new worktree.
@@ -22,14 +25,17 @@ Parse the arguments:
   - `tab` or empty → `itermMode: "tab"`
   - `split-h` or `h` → `itermMode: "split-horizontal"`
   - `split-v` or `v` → `itermMode: "split-vertical"`
+- `repo` is the source repository path (optional, defaults to current directory)
 
 Example usages:
 - `/wt-create PROJ-123 user-auth` → creates with ticket
 - `/wt-create auth-fix` → creates without ticket
 - `/wt-create PROJ-123 user-auth split-v` → creates with vertical split
+- `/wt-create PROJ-123 auth-fix tab ~/projects/myapp` → creates from specific repo
 
 Call the MCP tool and report the result including:
 - Worktree path
 - Branch name
+- Source repository
 - Whether dependencies were installed
 - iTerm status

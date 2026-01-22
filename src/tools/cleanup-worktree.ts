@@ -1,12 +1,12 @@
+import { existsSync } from 'fs';
 import { z } from 'zod';
 import {
   findWorktreeByName,
   removeWorktree as gitRemoveWorktree,
   deleteBranch,
   getChangedFilesCount,
-  getRepoRoot,
 } from '../utils/git.js';
-import { releasePort } from '../utils/config.js';
+import { releasePort, untrackWorktree, getTrackedWorktreeByName } from '../utils/config.js';
 import { findTabByPath, closeItermTab } from '../utils/iterm.js';
 
 export const cleanupWorktreeSchema = z.object({
@@ -30,8 +30,17 @@ export async function cleanupWorktreeTool(input: CleanupWorktreeInput): Promise<
   const actions: string[] = [];
 
   try {
-    // Find the worktree
-    const worktree = findWorktreeByName(input.name);
+    // First try to find in tracked worktrees (supports multi-repo)
+    const trackedWorktree = getTrackedWorktreeByName(input.name);
+
+    // Fall back to current repo search
+    const gitWorktree = trackedWorktree ? null : findWorktreeByName(input.name);
+
+    const worktree = trackedWorktree
+      ? { path: trackedWorktree.path, name: trackedWorktree.name, branch: trackedWorktree.branch, sourceRepo: trackedWorktree.sourceRepo }
+      : gitWorktree
+        ? { path: gitWorktree.path, name: gitWorktree.name, branch: gitWorktree.branch, sourceRepo: null }
+        : null;
 
     if (!worktree) {
       return {
@@ -39,6 +48,19 @@ export async function cleanupWorktreeTool(input: CleanupWorktreeInput): Promise<
         message: `Worktree not found: ${input.name}`,
         warnings: [],
         actions: [],
+      };
+    }
+
+    // Check if path still exists
+    if (!existsSync(worktree.path)) {
+      // Clean up tracking entry even if path doesn't exist
+      untrackWorktree(worktree.path);
+      releasePort(worktree.name);
+      return {
+        success: true,
+        message: `Worktree path no longer exists. Cleaned up tracking: ${worktree.name}`,
+        warnings: ['Worktree directory was already removed'],
+        actions: ['Removed tracking entry', 'Released port assignment'],
       };
     }
 
@@ -74,15 +96,18 @@ export async function cleanupWorktreeTool(input: CleanupWorktreeInput): Promise<
     releasePort(worktree.name);
     actions.push('Released port assignment');
 
-    // Remove worktree
+    // Remove worktree (using source repo as cwd)
     gitRemoveWorktree(worktree.path, input.force);
     actions.push(`Removed worktree: ${worktree.path}`);
 
+    // Untrack worktree
+    untrackWorktree(worktree.path);
+    actions.push('Removed tracking entry');
+
     // Delete branch if requested
-    if (input.deleteBranch) {
+    if (input.deleteBranch && worktree.sourceRepo) {
       try {
-        const repoRoot = getRepoRoot();
-        deleteBranch(worktree.branch, input.force, repoRoot);
+        deleteBranch(worktree.branch, input.force, worktree.sourceRepo);
         actions.push(`Deleted branch: ${worktree.branch}`);
       } catch (error) {
         const err = error as Error;

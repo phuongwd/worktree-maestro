@@ -8,7 +8,7 @@ import {
   branchExists,
   createWorktree as gitCreateWorktree,
 } from '../utils/git.js';
-import { loadConfig, getNextAvailablePort, assignPort } from '../utils/config.js';
+import { loadConfig, getNextAvailablePort, assignPort, trackWorktree } from '../utils/config.js';
 import { ensureDirectory, copyEnvFiles, installDependencies, runCommand } from '../utils/fs.js';
 import { openNewItermTab, openSplitPane } from '../utils/iterm.js';
 import type { CreateWorktreeResult } from '../types/index.js';
@@ -16,6 +16,7 @@ import type { CreateWorktreeResult } from '../types/index.js';
 export const createWorktreeSchema = z.object({
   ticket: z.string().optional().describe('Ticket/issue ID (e.g., PROJ-123, GH-456)'),
   name: z.string().describe('Short descriptive name for the worktree (e.g., user-auth, fix-login)'),
+  repo: z.string().optional().describe('Path to source repository (defaults to current directory). Use this for global MCP to specify which project.'),
   baseBranch: z.string().optional().describe('Base branch to create from (defaults to main/master)'),
   openInIterm: z.boolean().default(true).describe('Open worktree in iTerm'),
   itermMode: z.enum(['tab', 'split-horizontal', 'split-vertical']).default('tab').describe('How to open in iTerm: tab, split-horizontal, or split-vertical'),
@@ -63,10 +64,10 @@ export async function createWorktreeTool(input: CreateWorktreeInput): Promise<Cr
   const messages: string[] = [];
 
   try {
-    // Get repo info
-    const repoRoot = getRepoRoot();
-    const repoName = getRepoName();
-    const defaultBranch = input.baseBranch || getDefaultBranch();
+    // Get repo info - use provided repo path or current directory
+    const repoRoot = input.repo ? getRepoRoot(input.repo) : getRepoRoot();
+    const repoName = getRepoName(repoRoot);
+    const defaultBranch = input.baseBranch || getDefaultBranch(repoRoot);
 
     // Generate names
     const branchName = generateBranchName(input.ticket, input.name, config.branchPrefix);
@@ -88,6 +89,8 @@ export async function createWorktreeTool(input: CreateWorktreeInput): Promise<Cr
           port: null,
           itermTab: null,
           createdAt: new Date(),
+          sourceRepo: repoRoot,
+          repoName,
         },
         message: `Worktree directory already exists: ${worktreePath}`,
         errors: ['Directory already exists. Use a different name or clean up the existing worktree.'],
@@ -95,14 +98,14 @@ export async function createWorktreeTool(input: CreateWorktreeInput): Promise<Cr
     }
 
     // Check if branch already exists
-    const branchAlreadyExists = branchExists(branchName);
+    const branchAlreadyExists = branchExists(branchName, repoRoot);
 
     // Ensure base directory exists
     ensureDirectory(config.baseDirectory);
 
-    // Create worktree
-    messages.push(`Creating worktree at ${worktreePath}`);
-    gitCreateWorktree(worktreePath, branchName, defaultBranch, !branchAlreadyExists);
+    // Create worktree (run from source repo)
+    messages.push(`Creating worktree at ${worktreePath} from ${repoName}`);
+    gitCreateWorktree(worktreePath, branchName, defaultBranch, !branchAlreadyExists, repoRoot);
     messages.push(`Created branch: ${branchName}`);
 
     // Copy env files
@@ -182,6 +185,17 @@ export async function createWorktreeTool(input: CreateWorktreeInput): Promise<Cr
       }
     }
 
+    // Track the worktree for global access
+    trackWorktree({
+      name: worktreeDirName,
+      path: worktreePath,
+      sourceRepo: repoRoot,
+      repoName,
+      branch: branchName,
+      ticket: input.ticket || null,
+      createdAt: new Date().toISOString(),
+    });
+
     return {
       success: true,
       worktree: {
@@ -195,6 +209,8 @@ export async function createWorktreeTool(input: CreateWorktreeInput): Promise<Cr
         port: assignedPort,
         itermTab: itermTabId,
         createdAt: new Date(),
+        sourceRepo: repoRoot,
+        repoName,
       },
       message: messages.join('\n'),
       errors: errors.length > 0 ? errors : undefined,
@@ -214,6 +230,8 @@ export async function createWorktreeTool(input: CreateWorktreeInput): Promise<Cr
         port: null,
         itermTab: null,
         createdAt: new Date(),
+        sourceRepo: null,
+        repoName: null,
       },
       message: `Failed to create worktree: ${err.message}`,
       errors: [err.message],

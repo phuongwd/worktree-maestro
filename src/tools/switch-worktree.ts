@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { existsSync } from 'fs';
 import { findWorktreeByName } from '../utils/git.js';
+import { getTrackedWorktreeByName } from '../utils/config.js';
 import {
   openNewItermTab,
   openSplitPane,
@@ -29,8 +30,17 @@ export interface SwitchWorktreeResult {
 
 export async function switchWorktreeTool(input: SwitchWorktreeInput): Promise<SwitchWorktreeResult> {
   try {
-    // Find the worktree
-    const worktree = findWorktreeByName(input.name);
+    // First try to find in tracked worktrees (supports multi-repo)
+    const trackedWorktree = getTrackedWorktreeByName(input.name);
+
+    // Fall back to current repo search
+    const gitWorktree = trackedWorktree ? null : findWorktreeByName(input.name);
+
+    const worktree = trackedWorktree
+      ? { path: trackedWorktree.path, name: trackedWorktree.name, branch: trackedWorktree.branch, ticket: trackedWorktree.ticket }
+      : gitWorktree
+        ? { path: gitWorktree.path, name: gitWorktree.name, branch: gitWorktree.branch, ticket: gitWorktree.ticket }
+        : null;
 
     if (!worktree) {
       return {
